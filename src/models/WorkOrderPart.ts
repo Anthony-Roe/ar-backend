@@ -1,6 +1,9 @@
 import { Model, DataTypes, Optional } from 'sequelize';
 import sequelize from '../config/database';
+import WorkOrder from './WorkOrder';
+import Inventory from './Inventory';
 
+// Define the attributes for the WorkOrderPart model
 interface WorkOrderPartAttributes {
   work_order_part_id: number;
   work_order_id: number;
@@ -8,17 +11,27 @@ interface WorkOrderPartAttributes {
   quantity_used: number;
   created_at: Date;
   updated_at: Date;
+  deleted_at?: Date | null;
 }
 
-interface WorkOrderPartCreationAttributes extends Optional<WorkOrderPartAttributes, 'work_order_part_id' | 'created_at' | 'updated_at'> {}
+// Define the attributes for creating a new WorkOrderPart
+interface WorkOrderPartCreationAttributes extends Optional<WorkOrderPartAttributes, 'work_order_part_id' | 'created_at' | 'updated_at' | 'deleted_at'> {}
 
+// Define the WorkOrderPart model class
 class WorkOrderPart extends Model<WorkOrderPartAttributes, WorkOrderPartCreationAttributes> implements WorkOrderPartAttributes {
   public work_order_part_id!: number;
   public work_order_id!: number;
   public inventory_id!: number;
   public quantity_used!: number;
-  public created_at!: Date;
-  public updated_at!: Date;
+
+  // Timestamps
+  public readonly created_at!: Date;
+  public readonly updated_at!: Date;
+  public readonly deleted_at!: Date | null;
+
+  // Associations
+  public readonly workOrder?: WorkOrder;
+  public readonly inventory?: Inventory;
 }
 
 WorkOrderPart.init(
@@ -31,14 +44,29 @@ WorkOrderPart.init(
     work_order_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: 'work_orders',
+        key: 'work_order_id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
     },
     inventory_id: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      references: {
+        model: 'inventory',
+        key: 'inventory_id',
+      },
+      onUpdate: 'CASCADE',
+      onDelete: 'CASCADE',
     },
     quantity_used: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.DOUBLE,
       allowNull: false,
+      validate: {
+        min: { args: [0.0001], msg: 'Quantity used must be greater than 0' },
+      },
     },
     created_at: {
       type: DataTypes.DATE,
@@ -50,17 +78,19 @@ WorkOrderPart.init(
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     sequelize,
+    modelName: 'WorkOrderPart',
     tableName: 'work_order_parts',
     timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at',
+    paranoid: true,
+    underscored: true,
   }
 );
-
-// Define associations after all models are initialized
-// These will be set up in a separate associations file
 
 export default WorkOrderPart;

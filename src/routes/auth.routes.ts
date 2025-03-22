@@ -5,6 +5,8 @@ import passport from 'passport';
 import { Op } from 'sequelize';
 import User from '../models/User';
 import { validateUser } from '../validators/userValidator';
+import {authorize} from '../middleware/roleAuth';
+import Plant from '../models/Plant';
 
 const router = express.Router();
 
@@ -104,6 +106,16 @@ router.post('/logout', (req: express.Request, res: express.Response): void => {
     res.status(200).json({ message: 'Logged out successfully' });
   } catch (err) {
     console.error('Error during logout:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+router.get('/plants', authorize(['admin', 'manager']), async (req: express.Request, res: express.Response): Promise<any> => {
+  try {
+    const plants = await Plant.findAll();
+    res.json(plants);
+  } catch (error) {
+    console.error('Error fetching plants:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

@@ -9,7 +9,7 @@ import '../models/Machine';
 import '../models/WorkOrder';
 import '../models/WorkOrderPart';
 import '../models/WorkOrderLabor';
-import '../models/MaintenanceSchedule';
+import '../models/MaintenanceSchedule'; // Uncommented
 
 // Import associations to set up relationships between models
 import '../models/associations';

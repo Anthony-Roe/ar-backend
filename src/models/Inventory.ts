@@ -3,28 +3,30 @@ import sequelize from '../config/database';
 
 interface InventoryAttributes {
   inventory_id: number;
+  plant_id: number | null;
+  vendor_id: number | null;
   name: string;
-  part_number: string;
+  description: string;
   quantity: number;
-  unit_cost: number;
-  plant_id: number;
-  vendor_id: number;
+  unit_price: number;
   created_at: Date;
   updated_at: Date;
+  deleted_at: Date | null;
 }
 
-interface InventoryCreationAttributes extends Optional<InventoryAttributes, 'inventory_id' | 'created_at' | 'updated_at'> {}
+interface InventoryCreationAttributes extends Optional<InventoryAttributes, 'inventory_id' | 'created_at' | 'updated_at' | 'deleted_at'> {}
 
 class Inventory extends Model<InventoryAttributes, InventoryCreationAttributes> implements InventoryAttributes {
   public inventory_id!: number;
+  public plant_id!: number | null;
+  public vendor_id!: number | null;
   public name!: string;
-  public part_number!: string;
+  public description!: string;
   public quantity!: number;
-  public unit_cost!: number;
-  public plant_id!: number;
-  public vendor_id!: number;
+  public unit_price!: number;
   public created_at!: Date;
   public updated_at!: Date;
+  public deleted_at!: Date | null;
 }
 
 Inventory.init(
@@ -34,19 +36,29 @@ Inventory.init(
       autoIncrement: true,
       primaryKey: true,
     },
+    plant_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'plants',
+        key: 'plant_id',
+      },
+    },
+    vendor_id: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      references: {
+        model: 'vendors',
+        key: 'vendor_id',
+      },
+    },
     name: {
       type: DataTypes.STRING(100),
       allowNull: false,
-      validate: {
-        notEmpty: true,
-      },
     },
-    part_number: {
-      type: DataTypes.STRING(50),
+    description: {
+      type: DataTypes.TEXT,
       allowNull: false,
-      validate: {
-        notEmpty: true,
-      },
     },
     quantity: {
       type: DataTypes.INTEGER,
@@ -56,28 +68,12 @@ Inventory.init(
         min: 0,
       },
     },
-    unit_cost: {
-      type: DataTypes.FLOAT,
+    unit_price: {
+      type: DataTypes.DECIMAL(10, 2),
       allowNull: false,
-      defaultValue: 0.0,
+      defaultValue: 0.00,
       validate: {
         min: 0,
-      },
-    },
-    plant_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'plants', // Table name
-        key: 'plant_id',
-      },
-    },
-    vendor_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'vendors', // Table name
-        key: 'vendor_id',
       },
     },
     created_at: {
@@ -90,6 +86,10 @@ Inventory.init(
       allowNull: false,
       defaultValue: DataTypes.NOW,
     },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
   },
   {
     sequelize,
@@ -97,6 +97,8 @@ Inventory.init(
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
+    deletedAt: 'deleted_at',
+    paranoid: true, // Enable soft deletes
   }
 );
 

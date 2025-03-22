@@ -12,6 +12,7 @@ import machineRoutes from './routes/machine.routes';
 import workOrderRoutes from './routes/workOrder.routes';
 import workOrderPartsRoutes from './routes/workOrderParts.routes';
 import workOrderLaborRoutes from './routes/workOrderLabor.routes';
+import callsRouter from './routes/calls.routes';
 import authRoutes from './routes/auth.routes';
 import reportRoutes from './routes/reports.routes';
 import cookieParser from 'cookie-parser';
@@ -53,6 +54,7 @@ app.use('/api', plantRoutes);
 app.use('/api', vendorRoutes);
 app.use('/api', inventoryRoutes);
 app.use('/api', machineRoutes);
+app.use('/api', callsRouter);
 app.use('/api', workOrderRoutes);
 app.use('/api', workOrderPartsRoutes);
 app.use('/api', workOrderLaborRoutes);
@@ -60,10 +62,30 @@ app.use('/api', workOrderLaborRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api', reportRoutes);
 
-// Error handling middleware
-app.use((err: any, req: express.Request, res: express.Response) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+// Custom error interface
+interface ApiError extends Error {
+  statusCode?: number;
+}
+
+// Error handler middleware
+app.use((err: ApiError, req: express.Request, res: express.Response) => {
+  console.error('Error:', err);
+
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+
+  res.status(statusCode).json({
+    success: false,
+    message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
 });
 
+// 404 handler - place this before error handler
+app.use((req: express.Request, res: express.Response) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
+});
 export default app;
